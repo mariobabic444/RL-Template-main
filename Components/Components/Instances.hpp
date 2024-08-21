@@ -1,5 +1,8 @@
 #pragma once
 #include "../Component.hpp"
+#include "../Includes.hpp"
+#include "Main.hpp"
+#include <algorithm>
 
 // THIS COMPONENT IS LARGELY DEPENDENT ON YOUR GAME
 // Automatically stores active class instances that can be retrieved at any time.
@@ -13,7 +16,7 @@ public:
 	void OnCreate() override;
 	void OnDestroy() override;
 
-private:
+public:
 	std::map<std::string, class UClass*> StaticClasses;
 	std::map<std::string, class UFunction*> StaticFunctions;
 	std::vector<class UObject*> CreatedInstances;
@@ -23,17 +26,29 @@ public: // Helper functions for class instance grabbing/manipulation.
 	// So rely on hooking functions and storing classes here instead, only use GetInstanceOf functions them when needed.
 
 	// Get the default constructor of a class type. Example: UGameData_TA* gameData = GetDefaultInstanceOf<UGameData_TA>();
+
 	template<typename T> T* GetDefaultInstanceOf()
 	{
 		if (std::is_base_of<UObject, T>::value)
 		{
-			for (UObject* uObject : *UObject::GObjObjects())
+			UClass* staticClass = T::StaticClass();
+
+			if (staticClass && UObject::GObjObjects())
 			{
-				if (uObject && uObject->IsA<T>())
+				int32_t numObjects = UObject::GObjObjects()->Num();
+				for (int32_t i = numObjects - 1; i >= 0; i--)
 				{
-					if (uObject->GetFullName().find("Default__") != std::string::npos)
+					if (i >= numObjects)
+						continue;
+
+					UObject* uObject = UObject::GObjObjects()->At(i);
+
+					if (uObject && uObject->IsA(staticClass))
 					{
-						return static_cast<T*>(uObject);
+						if (uObject->GetFullName().find("Default__") != std::string::npos)
+						{
+							return static_cast<T*>(uObject);
+						}
 					}
 				}
 			}
@@ -43,19 +58,28 @@ public: // Helper functions for class instance grabbing/manipulation.
 	}
 
 	// Get the most current/active instance of a class. Example: UEngine* engine = GetInstanceOf<UEngine>();
-	template<typename T> T* GetInstanceOf()
+	template<typename T> T* xorbita()
 	{
 		if (std::is_base_of<UObject, T>::value)
 		{
-			for (int32_t i = UObject::GObjObjects()->Num(); i > 0; i--)
-			{
-				UObject* uObject = UObject::GObjObjects()->At(i);
+			UClass* staticClass = T::StaticClass();
 
-				if (uObject && uObject->IsA<T>())
+			if (staticClass && UObject::GObjObjects())
+			{
+				int32_t numObjects = UObject::GObjObjects()->Num();
+				for (int32_t i = numObjects - 1; i >= 0; i--)
 				{
-					if (uObject->GetFullName().find("Default__") == std::string::npos)
+					if (i >= numObjects)
+						continue;
+
+					UObject* uObject = UObject::GObjObjects()->At(i);
+
+					if (uObject && uObject->IsA(staticClass))
 					{
-						return static_cast<T*>(uObject);
+						if (uObject->GetFullName().find("Default__") == std::string::npos)
+						{
+							return static_cast<T*>(uObject);
+						}
 					}
 				}
 			}
@@ -71,13 +95,18 @@ public: // Helper functions for class instance grabbing/manipulation.
 
 		if (std::is_base_of<UObject, T>::value)
 		{
-			for (UObject* uObject : *UObject::GObjObjects())
+			UClass* staticClass = T::StaticClass();
+
+			if (staticClass)
 			{
-				if (uObject && uObject->IsA<T>())
+				for (UObject* uObject : *UObject::GObjObjects())
 				{
-					if (uObject->GetFullName().find("Default__") == std::string::npos)
+					if (uObject && uObject->IsA(staticClass))
 					{
-						objectInstances.push_back(static_cast<T*>(uObject));
+						if (uObject->GetFullName().find("Default__") == std::string::npos)
+						{
+							objectInstances.push_back(static_cast<T*>(uObject));
+						}
 					}
 				}
 			}
@@ -99,7 +128,7 @@ public: // Helper functions for class instance grabbing/manipulation.
 			{
 				for (UObject* uObject : *UObject::GObjObjects())
 				{
-					if (uObject && uObject->IsA<T>())
+					if (uObject && uObject->IsA(staticClass))
 					{
 						if (uObject->GetFullName().find("Default__") != std::string::npos)
 						{
@@ -114,28 +143,26 @@ public: // Helper functions for class instance grabbing/manipulation.
 	}
 
 	// Get an object instance by it's name and class type. Example: UTexture2D* texture = FindObject<UTexture2D>("WhiteSquare");
-	template<typename T> T* FindObject(const std::string& objectName, bool bStrictFind = false)
+	template<typename T> T* FindObject(const std::string& objectName)
 	{
 		if (std::is_base_of<UObject, T>::value)
 		{
-			for (int32_t i = UObject::GObjObjects()->size(); i > 0; i--)
+			UClass* staticClass = T::StaticClass();
+
+			if (staticClass)
 			{
-				UObject* uObject = UObject::GObjObjects()->at(i);
-
-				if (uObject && uObject->IsA<T>())
+				for (int32_t i = (UObject::GObjObjects()->Num() - 5); i > 0; i--)
 				{
-					std::string objectFullName = uObject->GetFullName();
+					UObject* uObject = UObject::GObjObjects()->At(i);
 
-					if (bStrictFind)
+					if (dynamic_cast<T*>(uObject) && uObject && uObject->IsA(staticClass))
 					{
-						if (objectFullName == objectName)
+						std::string objectFullName = uObject->GetFullName();
+
+						if (objectFullName == objectName || objectFullName.find(objectName) != std::string::npos)
 						{
 							return static_cast<T*>(uObject);
 						}
-					}
-					else if (objectFullName.find(objectName) != std::string::npos)
-					{
-						return static_cast<T*>(uObject);
 					}
 				}
 			}
@@ -151,15 +178,22 @@ public: // Helper functions for class instance grabbing/manipulation.
 
 		if (std::is_base_of<UObject, T>::value)
 		{
-			for (int32_t i = UObject::GObjObjects()->size(); i > 0; i--)
-			{
-				UObject* uObject = UObject::GObjObjects()->at(i);
+			UClass* staticClass = T::StaticClass();
 
-				if (uObject && uObject->IsA<T>())
+			if (staticClass)
+			{
+				for (int32_t i = (UObject::GObjObjects()->Num() - 5); i > 0; i--)
 				{
-					if (uObject->GetFullName().find(objectName) != std::string::npos)
+					UObject* uObject = UObject::GObjObjects()->At(i);
+
+					if (uObject && uObject->IsA(staticClass))
 					{
-						objectInstances.push_back(static_cast<T*>(uObject));
+						std::string objectFullName = uObject->GetFullName();
+
+						if (objectFullName == objectName || objectFullName.find(objectName) != std::string::npos)
+						{
+							objectInstances.push_back(static_cast<T*>(uObject));
+						}
 					}
 				}
 			}
@@ -167,6 +201,7 @@ public: // Helper functions for class instance grabbing/manipulation.
 
 		return objectInstances;
 	}
+
 
 	class UClass* FindStaticClass(const std::string& className);
 
@@ -190,11 +225,11 @@ public: // Helper functions for class instance grabbing/manipulation.
 			}
 
 			// Making sure newly created object doesn't get randomly destoyed by the garbage collector when we don't want it do.
-			if (returnObject)
+			/*if (returnObject)
 			{
 				MarkInvincible(returnObject);
 				CreatedInstances.push_back(returnObject);
-			}
+			}*/
 		}
 
 		return returnObject;
@@ -206,7 +241,7 @@ public: // Helper functions for class instance grabbing/manipulation.
 	// Set object as a temporary object and marks it for the garbage collector to destroy.
 	void MarkForDestory(class UObject* object);
 
-private: 
+private:
 	class UCanvas* I_UCanvas;
 	class AHUD* I_AHUD;
 	class UGameViewportClient* I_UGameViewportClient;

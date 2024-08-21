@@ -382,6 +382,18 @@ void EventsComponent::Initialize()
 	HookEventPost("Function TAGame.GameViewportClient_TA.HandleKeyPress", &Hooks::GameViewPortKeyPress);
 	HookEventPre("Function TAGame.GFxData_MainMenu_TA.MainMenuAdded", &Hooks::GFxDataMainMenuAdded);
 
+
+	HookEventPre("Function TAGame.Car_TA.SetVehicleInput", [&](PreEvent& Event) {
+		std::vector<ACar_TA*> cars = Instances.GetAllInstancesOf<ACar_TA>();
+		for (int x = 0; x < cars.size(); x++)
+		{
+			Console.Write(std::to_string(cars[x]->LocalCollisionOffset.X));
+			Console.Write(std::to_string(cars[x]->LocalCollisionOffset.Y));
+			Console.Write(std::to_string(cars[x]->LocalCollisionOffset.Z));
+		}
+	});
+
+
 	Console.Write(GetNameFormatted() + std::to_string(PreHookedEvents.size()) + " Pre-Hook(s) Initialized!");
 	Console.Write(GetNameFormatted() + std::to_string(PostHookedEvents.size()) + " Post-Hook(s) Initialized!");
 	Console.Write(GetNameFormatted() + std::to_string(BlacklistedEvents.size()) + " Backlisted Event(s) Initialized!");

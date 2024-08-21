@@ -58,11 +58,11 @@ void InstancesComponent::MarkInvincible(class UObject* object)
 {
 	if (object)
 	{
-		object->ObjectFlags &= ~EObjectFlags::RF_Transient;
+		/*object->ObjectFlags &= ~EObjectFlags::RF_Transient;
 		object->ObjectFlags &= ~EObjectFlags::RF_TagGarbageTemp;
 		object->ObjectFlags |= EObjectFlags::RF_Public;
 		object->ObjectFlags |= EObjectFlags::RF_Standalone;
-		object->ObjectFlags |= EObjectFlags::RF_MarkAsRootSet;
+		object->ObjectFlags |= EObjectFlags::RF_MarkAsRootSet;*/
 	}
 }
 
@@ -71,9 +71,9 @@ void InstancesComponent::MarkForDestory(class UObject* object)
 	if (object)
 	{
 		object->ObjectFlags = 0;
-		object->ObjectFlags |= EObjectFlags::RF_Public;
+		/*object->ObjectFlags |= EObjectFlags::RF_Public;
 		object->ObjectFlags |= EObjectFlags::RF_Transient;
-		object->ObjectFlags |= EObjectFlags::RF_TagGarbageTemp;
+		object->ObjectFlags |= EObjectFlags::RF_TagGarbageTemp;*/
 	}
 }
 
@@ -186,4 +186,4 @@ void InstancesComponent::Initialize()
 	Console.Write(GetNameFormatted() + "Instances Initialized!");
 }
 
-class InstancesComponent Instances{};
+class InstancesComponent Instances {};
